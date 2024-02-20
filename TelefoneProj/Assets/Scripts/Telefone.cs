@@ -1,20 +1,39 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Sirenix.OdinInspector;
-using System.Net.Sockets;
 using UnityEngine.UI;
-using UnityEditor;
+using UnityEngine.Events;
 
-[RequireComponent(typeof(ArduinoController))]
+[System.Serializable]
+public class PhoneNumber{
+
+	public string callNumber;
+	public UnityEvent callEvent;
+}
+
+[RequireComponent(typeof(ArduinoController), typeof(AudioSource))]
 public class Telefone : MonoBehaviour
 {
+    Dictionary<string, int> keyIndex = new Dictionary<string, int>()
+    { {"1", 0}, {"2", 1}, {"3", 2}, {"4", 3}, {"5", 4}, {"6", 5}, {"7", 6}, {"8", 7}, {"9", 8}, {"*", 9}, {"0", 10}, {"#", 11} };
 
-    [ReadOnly]
     public bool receiverUp = false;
+    public string dialedNumber = "";
+    private float dialTimer, callDelay = 3f;
+
+    public List<PhoneNumber> phoneNumberList = new List<PhoneNumber>();
+
+    public DialTones dialTones;
+    AudioSource audioSource;
+    
 
 
-    // Start is called before the first frame update
+
+
+    void Awake()
+    {
+        audioSource = GetComponent<AudioSource>();
+    }
     void Start()
     {
         
@@ -25,103 +44,159 @@ public class Telefone : MonoBehaviour
     {
 
         ButtonUpdate();
+        DialUpdate();
     }
 
 
-    [BoxGroup("Simulador", centerLabel: true)]
-    [ButtonGroup("Simulador/0"), Button("ReceiverUp"), GUIColor("GetColor0")]
+    [TitleGroup("Simulador")]
+    [ButtonGroup("Simulador/0"), Button("ReceiverUp"), DisableInEditorMode, GUIColor("GetColor0"), ]
     void _ReceiverUp()
     {
-        if(EditorApplication.isPlaying)
-            receiverUp = true;
+        receiverUp = true;
         
         SendMessage("ReceiverDown");
         
     }
-    
-    [ButtonGroup("Simulador/0"), Button("ReceiverDown"), GUIColor("GetColor1")]
+
+    [ButtonGroup("Simulador/0"), Button("ReceiverDown"), DisableInEditorMode, GUIColor("GetColor1")]
     void _ReceiverDown()
     {
-        if(EditorApplication.isPlaying)
-            receiverUp = false;
+        receiverUp = false;
+        dialedNumber = "";
+        dialTimer = 0;
         
         SendMessage("ReceiverUp");
         
     }
     
-    [ButtonGroup("Simulador/1"), Button("1"), GUIColor("GetColor2")]
+    [ButtonGroup("Simulador/1"), Button("1"), DisableInEditorMode, GUIColor("GetColor2")]
     void _Key1()
     {
+        Dial("1");
         SendMessage("Key1");
     }
 
-    [ButtonGroup("Simulador/1"), Button("2"), GUIColor("GetColor3")]
+    [ButtonGroup("Simulador/1"), Button("2"), DisableInEditorMode, GUIColor("GetColor3")]
     void _Key2()
     {
+        Dial("2");
         SendMessage("Key2");
     }
 
-    [ButtonGroup("Simulador/1"), Button("3"), GUIColor("GetColor4")]
+    [ButtonGroup("Simulador/1"), Button("3"), DisableInEditorMode, GUIColor("GetColor4")]
     void _Key3()
     {
+        Dial("3");
         SendMessage("Key3");
     }
 
-    [ButtonGroup("Simulador/2"), Button("4"), GUIColor("GetColor5")]
+    [ButtonGroup("Simulador/2"), Button("4"), DisableInEditorMode, GUIColor("GetColor5")]
     void _Key4()
     {
+        Dial("4");
         SendMessage("Key4");
     }
 
-    [ButtonGroup("Simulador/2"), Button("5"), GUIColor("GetColor6")]
+    [ButtonGroup("Simulador/2"), Button("5"), DisableInEditorMode, GUIColor("GetColor6")]
     void _Key5()
     {
+        Dial("5");
         SendMessage("Key5");
     }
 
-    [ButtonGroup("Simulador/2"), Button("6"), GUIColor("GetColor7")]
+    [ButtonGroup("Simulador/2"), Button("6"), DisableInEditorMode, GUIColor("GetColor7")]
     void _Key6()
     {
+        Dial("6");
         SendMessage("Key6");
     }
 
-    [ButtonGroup("Simulador/3"), Button("7"), GUIColor("GetColor8")]
+    [ButtonGroup("Simulador/3"), Button("7"), DisableInEditorMode, GUIColor("GetColor8")]
     void _Key7()
     {
+        Dial("7");
         SendMessage("Key7");
     }
 
-    [ButtonGroup("Simulador/3"), Button("8"), GUIColor("GetColor9")]
+    [ButtonGroup("Simulador/3"), Button("8"), DisableInEditorMode, GUIColor("GetColor9")]
     void _Key8()
     {
+        Dial("8");
         SendMessage("Key8");
     }
 
-    [ButtonGroup("Simulador/3"), Button("9"), GUIColor("GetColor10")]
+    [ButtonGroup("Simulador/3"), Button("9"), DisableInEditorMode, GUIColor("GetColor10")]
     void _Key9()
     {
+        Dial("9");
         SendMessage("Key9");
     }
 
-    [ButtonGroup("Simulador/4"), Button("*"), GUIColor("GetColor11")]
-    void _KeyAsterisk()
+    [ButtonGroup("Simulador/4"), Button("*"), DisableInEditorMode, GUIColor("GetColor11")]
+    void _KeyStar()
     {
-        SendMessage("KeyAsterisk");
+        Dial("*");
+        SendMessage("KeyStar");
     }
 
-    [ButtonGroup("Simulador/4"), Button("0"), GUIColor("GetColor12")]
+    [ButtonGroup("Simulador/4"), Button("0"), DisableInEditorMode, GUIColor("GetColor12")]
     void _Key0()
     {
+        Dial("0");
         SendMessage("Key0");
     }
 
-    [ButtonGroup("Simulador/4"), Button("#"), GUIColor("GetColor13")]
+    [ButtonGroup("Simulador/4"), Button("#"), DisableInEditorMode, GUIColor("GetColor13")]
     void _KeyHash()
     {
+        Dial("#");
         SendMessage("KeyHash");
     }
 
 
+    void Dial(string s)
+    {
+        if(receiverUp)
+        {
+            dialedNumber += s;
+            dialTimer = callDelay;
+
+            if(dialTones != null)
+            {
+                if (keyIndex.TryGetValue(s, out int k) && k <= dialTones.clips.Count)
+                    audioSource.PlayOneShot(dialTones.clips[k]);
+            }
+
+        }
+    }
+
+    void DialUpdate()
+    {
+        if(dialTimer > 0)
+        {
+            dialTimer -= Time.deltaTime;
+            
+            if(dialTimer <= 0)
+            {
+                dialTimer = 0;
+                Call(dialedNumber);
+            }
+
+        }
+    }
+
+    void Call(string number)
+    {
+        foreach(PhoneNumber c in phoneNumberList)
+        {
+            if(c.callNumber == dialedNumber)
+                c.callEvent.Invoke();
+        }
+    }
+
+
+
+    /* ------------ SIMULATOR STUFF ------------ */
 
     private float[] buttonTimers = new float[14];
     private static bool[] buttonPresses = new bool[14];
@@ -198,7 +273,7 @@ public class Telefone : MonoBehaviour
                 break;
 
             case '*':
-                _KeyAsterisk();
+                _KeyStar();
                 buttonPresses[11] = true;
                 buttonTimers[11] = .1f;
                 break;
