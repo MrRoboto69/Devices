@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "TelefoneProj.sln"
+    "dotnet.defaultSolution": "UnityProj.sln"
 }
