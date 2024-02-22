@@ -8,23 +8,38 @@ using UnityEngine.Events;
 public class PhoneNumber{
 
 	public string callNumber;
+    public AudioClip audioClip;
 	public UnityEvent callEvent;
 }
 
 [RequireComponent(typeof(ArduinoController), typeof(AudioSource))]
 public class Telefone : MonoBehaviour
 {
+    ArduinoController controller;
+
     Dictionary<string, int> keyIndex = new Dictionary<string, int>()
     { {"1", 0}, {"2", 1}, {"3", 2}, {"4", 3}, {"5", 4}, {"6", 5}, {"7", 6}, {"8", 7}, {"9", 8}, {"*", 9}, {"0", 10}, {"#", 11} };
 
+    [ReadOnly]
     public bool receiverUp = false;
-    public string dialedNumber = "";
-    private float dialTimer, callDelay = 3f;
-
+    [ReadOnly]
+    public bool ringing = false;
+    [ReadOnly]
+    public bool calling = false;
+    
+    [Title("Phone Book"), ListDrawerSettings(NumberOfItemsPerPage = 3)]
     public List<PhoneNumber> phoneNumberList = new List<PhoneNumber>();
 
+    [Title("Dialling")]
     public DialTones dialTones;
     AudioSource audioSource;
+    [ReadOnly]
+    public string dialedNumber = "";
+    [Range(.0f, 5f), Tooltip("Tempo até tentar chamar depois de se digitar um número correcto")]
+    public float callDelay = 3f;
+    [Range(.0f, 10f), Tooltip("Tempo até ir abaixo depois de se carregar num digito")]
+    public float dialTimeout = 3f;
+    private float callTimer;
     
 
 
@@ -47,6 +62,23 @@ public class Telefone : MonoBehaviour
         DialUpdate();
     }
 
+    [TitleGroup("RingTone")]
+    [ButtonGroup("RingTone/0"), Button("Ring")]
+    public void RingToneA() { Ring("A"); }
+    [ButtonGroup("RingTone/0"), Button("Zelda")]
+    public void RingToneB() { Ring("B"); }
+    [ButtonGroup("RingTone/0"), Button("Birthday")]
+    public void RingToneC() { Ring("C"); }
+    [ButtonGroup("RingTone/0"), Button("Random")]
+    public void RingToneD() { Ring("D"); }
+
+    void Ring(string tone)
+    {
+        if(!receiverUp)
+            controller.SendMessage(tone);
+    }
+
+
 
     [TitleGroup("Simulador")]
     [ButtonGroup("Simulador/0"), Button("ReceiverUp"), DisableInEditorMode, GUIColor("GetColor0"), ]
@@ -62,8 +94,8 @@ public class Telefone : MonoBehaviour
     void _ReceiverDown()
     {
         receiverUp = false;
-        dialedNumber = "";
-        dialTimer = 0;
+        calling = false;
+        ResetDialling();
         
         SendMessage("ReceiverUp");
         
@@ -158,40 +190,75 @@ public class Telefone : MonoBehaviour
     {
         if(receiverUp)
         {
-            dialedNumber += s;
-            dialTimer = callDelay;
-
+            // Toca o Tone de acordo com o DialTones Scriptable Object
             if(dialTones != null)
             {
                 if (keyIndex.TryGetValue(s, out int k) && k <= dialTones.clips.Count)
                     audioSource.PlayOneShot(dialTones.clips[k]);
             }
 
+            // Tenta chamar. Tempo para chamar e timeout é diferente!
+            if(!calling)
+            {
+                dialedNumber += s;
+                if(NumberExists(dialedNumber))
+                    callTimer = callDelay;
+                else
+                    callTimer = dialTimeout;
+            }
         }
     }
 
     void DialUpdate()
     {
-        if(dialTimer > 0)
+        if(callTimer > 0)
         {
-            dialTimer -= Time.deltaTime;
+            callTimer -= Time.deltaTime;
             
-            if(dialTimer <= 0)
+            if(callTimer <= 0)
             {
-                dialTimer = 0;
+                callTimer = 0;
                 Call(dialedNumber);
             }
-
         }
+
     }
 
     void Call(string number)
     {
+        calling = true;
+
         foreach(PhoneNumber c in phoneNumberList)
         {
-            if(c.callNumber == dialedNumber)
+            if(c.callNumber == number)
+            {
                 c.callEvent.Invoke();
+                if(c.audioClip != null)
+                    audioSource.PlayOneShot(c.audioClip);
+            }
+
+            return;
         }
+
+        //TODO: O que acontece quando o número chamado não existe?
+
+    }
+
+    void ResetDialling()
+    {
+        dialedNumber = "";
+        callTimer = 0;
+    }
+
+    bool NumberExists(string number)
+    {
+        foreach(PhoneNumber c in phoneNumberList)
+        {
+            if(c.callNumber == number)
+                return true;
+        }
+
+        return false;
     }
 
 

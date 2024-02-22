@@ -170,9 +170,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   receiverUp: 0
-  dialedNumber: 
+  ringing: 0
+  calling: 0
   phoneNumberList: []
   dialTones: {fileID: 11400000, guid: 62d81078ef93a4e6f88a850406a2618d, type: 2}
+  dialedNumber: 
+  callDelay: 3
+  dialTimeout: 3
 --- !u!114 &25662702
 MonoBehaviour:
   m_ObjectHideFlags: 0
