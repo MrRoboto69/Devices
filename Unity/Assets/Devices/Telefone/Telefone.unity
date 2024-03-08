@@ -262,17 +262,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 25662697}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a6b38d919f13469f8ed4f5ae875e006, type: 3}
+  m_Script: {fileID: 11500000, guid: 0b0ea224052d538429078ef4a57c6a7f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  receiverUp: 0
-  ringing: 0
-  calling: 0
-  phoneNumberList: []
-  dialTones: {fileID: 11400000, guid: 190df5c8224614e5b8ddec85b7d8bdee, type: 2}
-  dialedNumber: 
-  callDelay: 3
-  dialTimeout: 3
+  portName: COM3
+  baudRate: 9600
+  reconnectionDelay: 1000
+  maxUnreadMessages: 1
+  ports: []
 --- !u!114 &25662705
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -282,15 +279,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 25662697}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c3acf2d5884540308a3d3568d634d06, type: 3}
+  m_Script: {fileID: 11500000, guid: 4322b323e65e5a345a7b411fff028a63, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  portName: Bluetooth-Incoming-Port
-  baudRate: 9600
-  reconnectionDelay: 1000
-  maxUnreadMessages: 1
-  ports:
-  - Bluetooth-Incoming-Port
+  receiverUp: 0
+  ringing: 0
+  calling: 0
+  phoneNumberList: []
+  dialTones: {fileID: 0}
+  dialedNumber: 
+  callDelay: 3
+  dialTimeout: 3
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
